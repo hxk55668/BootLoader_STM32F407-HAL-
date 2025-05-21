@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "main.h": "c",
+        "u1_bootloader.h": "c",
+        "usart.h": "c"
+    }
+}
