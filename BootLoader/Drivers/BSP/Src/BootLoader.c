@@ -100,7 +100,7 @@ void BootLoader_CMDFunciton(uint8_t *Data, uint16_t DataLength)
 			}
 	 }
 		if (BootStatusFlag & UPDATA_IAP_XMODEData){
-			//一次接收133个字节 Data为128个字节 包头为0x01
+			//一次接收133个字节 Data为128个字节 包头为0x01 GITHUB测试
 			if (DataLength == 133 && Data[0] == 0x01){
 				BootStatusFlag &= ~UPDATA_IAP_XMODEC;
 				UpDataA.XmodeCRC = BootLoader_XmodeCRC16(&Data[3], 128);
