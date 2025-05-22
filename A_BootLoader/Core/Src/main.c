@@ -95,6 +95,7 @@ int main(void)
   MX_I2C1_Init();
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
+	__enable_irq();
 	U1_Printf("Test\r\n");
 	uint16_t i;
 	U1BootLoader_Init();
