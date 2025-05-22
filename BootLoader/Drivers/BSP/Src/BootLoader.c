@@ -98,27 +98,34 @@ void BootLoader_CMDFunciton(uint8_t *Data, uint16_t DataLength)
 					U1_Printf("重启成功\r\n");
 					HAL_NVIC_SystemReset();
 			}
-			// 这里还有问题 明天修改
-			if (BootStatusFlag & UPDATA_IAP_XMODEData){
-				//一次接收133个字节 Data为128个字节 包头为0x01
-				if (DataLength == 133 && Data[0] == 0x01){
-					BootStatusFlag &= ~UPDATA_IAP_XMODEC;
-					UpDataA.XmodeCRC = BootLoader_XmodeCRC16(&Data[3], 128);
-					if (UpDataA.XmodeCRC == Data[131] * 256 + Data[130]){
-						UpDataA.XmodeNum ++;
-						memcpy(&UpDataA.UpDataBuffer[((UpDataA.XmodeNum - 1) % (F407_FLASH_16SIZE / 128)) * 128], &Data[3], 128);
-						if (UpDataA.XmodeNum % (F407_FLASH_16SIZE / 128) == 0){
-							MyFlash_WriteBuffer(FLASH_ACode_STARTADDR + ((UpDataA.XmodeNum / (F407_FLASH_16SIZE / 128)) - 1) * F407_FLASH_16SIZE, UpDataA.UpDataBuffer, F407_FLASH_16SIZE);
-						}
-						U1_Printf("\x06");
-						
-					}else{
-						U1_Printf("\x15");
+	 }
+		if (BootStatusFlag & UPDATA_IAP_XMODEData){
+			//一次接收133个字节 Data为128个字节 包头为0x01
+			if (DataLength == 133 && Data[0] == 0x01){
+				BootStatusFlag &= ~UPDATA_IAP_XMODEC;
+				UpDataA.XmodeCRC = BootLoader_XmodeCRC16(&Data[3], 128);
+				if (UpDataA.XmodeCRC == Data[131] * 256 + Data[132]){
+					UpDataA.XmodeNum ++;
+					memcpy(&UpDataA.UpDataBuffer[((UpDataA.XmodeNum - 1) % 8) * 128], &Data[3], 128);
+					if (UpDataA.XmodeNum % 8 == 0){
+						MyFlash_WriteBuffer(FLASH_ACode_STARTADDR + ((UpDataA.XmodeNum / 8) - 1) * UPDATA_SINGLE_SIZE, UpDataA.UpDataBuffer, UPDATA_SINGLE_SIZE);
 					}
+					U1_Printf("\x06");
+					
+				}else{
+					U1_Printf("\x15");
 				}
 			}
-	 }
-		
+			if (DataLength == 1 && Data[0] == 0x04){
+				U1_Printf("\x06");
+				if (UpDataA.XmodeNum % 8 != 0){
+					MyFlash_WriteBuffer(FLASH_ACode_STARTADDR + ((UpDataA.XmodeNum / 8)) * UPDATA_SINGLE_SIZE, UpDataA.UpDataBuffer, (UpDataA.XmodeNum % 8) * 128);
+				}
+				BootStatusFlag &= ~UPDATA_IAP_XMODEData;
+				HAL_Delay(50);
+				HAL_NVIC_SystemReset();
+			}
+		}
 }
 /**
   * 函    数：BootLoader功能选择函数
