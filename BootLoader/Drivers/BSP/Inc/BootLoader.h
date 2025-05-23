@@ -27,12 +27,14 @@
 #define UPDATA_UPDTA_A							0x00000001																//更新事件状态位
 #define UPDATA_IAP_XMODEC						0x00000002																//IAP下载标志位
 #define UPDATA_IAP_XMODEData				0x00000004																//处理IAP数据的标志位
+#define OTA_VERSION_FLAG						0x00000008																//设置版本号OTAFlag
 
 
 //OTA结构体定义 这些信息都存放到24C02中
 typedef struct{
 	uint32_t OTA_FLAG;
 	uint32_t Firelen[11];							//0号成员固定对应OTA的大小
+	uint8_t  OTA_VERSION[32];					//24c02中用于存放版本号
 }OTA_INFOCB;
 //更新事件结构体
 typedef struct{

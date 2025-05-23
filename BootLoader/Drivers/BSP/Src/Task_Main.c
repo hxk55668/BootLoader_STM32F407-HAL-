@@ -32,9 +32,6 @@ void Task_Main_While(void)
 	HAL_Delay(10);
 	uint8_t i;
 	if(UCB_CB.URxDataOut != UCB_CB.URxDataIn){
-		for (i = 0; i < UCB_CB.URxDataOut -> end - UCB_CB.URxDataOut ->start +1; i++){
-			U1_Printf("%c\r\n", UCB_CB.URxDataOut->start[i]);
-		}
 		BootLoader_CMDFunciton(UCB_CB.URxDataOut ->start, UCB_CB.URxDataOut -> end - UCB_CB.URxDataOut ->start +1);
 		UCB_CB.URxDataOut++;
 		if (UCB_CB.URxDataOut == UCB_CB.URxDataEnd)
