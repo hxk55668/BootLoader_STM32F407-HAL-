@@ -8,6 +8,9 @@
 void Task_Main_Init(void)
 {
 	U1BootLoader_Init();
+//	ESP8266_Init();
+	
+//	UART3_Init();
 }
 /**
   * 函    数：主函数
@@ -16,7 +19,7 @@ void Task_Main_Init(void)
   */
 void Task_Main(void) {
 	
-    EP24C_WriteOTAInfo();
+//    EP24C_WriteOTAInfo();
     // 从24C02读取
     EP24C_ReadOTAInFo();
     BootLoader_Brance();
@@ -39,13 +42,12 @@ void Task_Main_While(void)
 			UCB_CB.URxDataOut = &UCB_CB.URxDataBuffer[0];
 		}
 	}
-	//表示IAP下载状态发生
-	if (BootStatusFlag & UPDATA_IAP_XMODEC){
-	  if (UpDataA.XmodeTimer >= 100){
-			UpDataA.XmodeTimer = 0;
-			U1_Printf("C");
-		}	
-		UpDataA.XmodeTimer ++;
+	if (BootStatusFlag & UPDATA_IAP_XMODEC) {
+			if (UpDataA.XmodeTimer >= 100) {
+					UpDataA.XmodeTimer = 0;
+					U1_Printf("C");
+			}
+			UpDataA.XmodeTimer++;
 	}
 	
 	//表示测试给OTA更新事件
@@ -63,6 +65,7 @@ void Task_Main_While(void)
 				//拿完数据后 更新到A区 写整数
 				MyFlash_WriteBuffer(i * 1024 + FLASH_ACode_STARTADDR, UpDataA.UpDataBuffer, UPDATA_SINGLE_SIZE);
 			}
+			U1_Printf("写入整数完成");
 			if (OTA_INFO.Firelen[UpDataA.W25Q128_BlockNum] % 1024 != 0){	//写余数
 				Flash_ReadBytes(1024 * i + UpDataA.W25Q128_BlockNum * 64 * 1024, UpDataA.UpDataBuffer, OTA_INFO.Firelen[UpDataA.W25Q128_BlockNum] % 1024);
 				//拿完数据后 更新到A区

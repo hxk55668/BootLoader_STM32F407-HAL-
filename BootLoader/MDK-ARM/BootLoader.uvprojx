@@ -823,6 +823,21 @@
               <FileType>1</FileType>
               <FilePath>..\Drivers\BSP\Src\BootLoader.c</FilePath>
             </File>
+            <File>
+              <FileName>driver_esp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drivers\BSP\Src\driver_esp.c</FilePath>
+            </File>
+            <File>
+              <FileName>esp01_uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drivers\BSP\Src\esp01_uart.c</FilePath>
+            </File>
+            <File>
+              <FileName>UART3_PRINTF.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drivers\BSP\Src\UART3_PRINTF.c</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>

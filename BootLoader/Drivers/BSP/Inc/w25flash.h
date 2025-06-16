@@ -82,6 +82,9 @@ void Flash_SpliteAddr(uint32_t globalAddr, uint8_t *addrHigh, uint8_t *addrMid,
 		uint8_t *addrLow);
 
 //=======4. chip、Block，Sector擦除函数============
+/* 块擦除函数声明 */
+void Flash_EraseBlockByNumber(uint8_t block_num); // 通过块号擦除64KB块
+
 //Command=0xC7: Chip Erase, 擦除整个器件,大约25秒
 void Flash_EraseChip(void);
 

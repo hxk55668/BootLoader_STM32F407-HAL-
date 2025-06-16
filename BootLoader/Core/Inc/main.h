@@ -57,6 +57,8 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define ESP_RESET_Pin GPIO_PIN_2
+#define ESP_RESET_GPIO_Port GPIOE
 
 /* USER CODE BEGIN Private defines */
 

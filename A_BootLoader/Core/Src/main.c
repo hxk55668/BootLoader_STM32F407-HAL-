@@ -110,8 +110,7 @@ int main(void)
 			U1_Printf("本次接收数据长度为：%d\r\n", UCB_CB.URxDataOut->end - UCB_CB.URxDataOut -> start + 1);
 			U1_Printf("字符串为：\r\n");
 			for (i = 0; i < UCB_CB.URxDataOut -> end - UCB_CB.URxDataOut ->start +1; i++){
-				U1_Printf("%c\r\n", UCB_CB.URxDataOut->start[i]);
-				U1_Printf("[0]=%c", UCB_CB.URxDataOut->start[0]);
+				U1_Printf("%c", UCB_CB.URxDataOut->start[i]);
 			}
 			UCB_CB.URxDataOut++;
 			if (UCB_CB.URxDataOut == UCB_CB.URxDataEnd)

@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>    // 标准整数类型定义（如uint32_t）
+#include "esp01_uart.h"
 //Flash私有定义
 //F407FLASH一共12个扇区 前四个扇区为16K 第五个为64K 后面七个为128K
 #define F407_FLASH_STARTADDR				0x08000000
@@ -28,8 +29,9 @@
 #define UPDATA_IAP_XMODEC						0x00000002																//IAP下载标志位
 #define UPDATA_IAP_XMODEData				0x00000004																//处理IAP数据的标志位
 #define OTA_VERSION_FLAG						0x00000008																//设置版本号OTAFlag
-
-
+#define CODE_INSTALL_TO_MyFlash			0x00000010																//
+#define CMD5_IAP_XModeData					0x00000020
+#define CMD6_INSTALL_TO_ASector			0x00000040
 //OTA结构体定义 这些信息都存放到24C02中
 typedef struct{
 	uint32_t OTA_FLAG;
@@ -56,6 +58,7 @@ void EP24C_WriteOTAInfo(void);
 void EP24C_ReadOTAInFo(void);
 void BootLoader_CMDFunciton(uint8_t *Data, uint16_t DataLength);
 uint16_t BootLoader_XmodeCRC16(uint8_t *data, uint16_t DataLength);
+void BootLoader_Info(void);
 //外部声明
 #define OTA_INFOCB_SIZE							sizeof(OTA_INFOCB)
 extern OTA_INFOCB OTA_INFO;

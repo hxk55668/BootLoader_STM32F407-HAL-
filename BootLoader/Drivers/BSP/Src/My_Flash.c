@@ -151,27 +151,78 @@ HAL_StatusTypeDef MyFlash_WriteByte(uint32_t address, uint8_t data)
     // 调用字写入函数
     return MyFlash_WriteWord(target_word_addr, new_data);
 }
+///**
+//  * @brief  批量写入数据（按字对齐）
+//  * @param  address 目标起始地址（必须4字节对齐）
+//  * @param  buffer  数据缓冲区
+//  * @param  len     数据长度（必须为4的倍数）
+//  * @retval None
+//  */
+//void MyFlash_WriteBuffer(uint32_t address, uint8_t *buffer, uint32_t len) {
+//    // 检查地址和长度是否对齐
+//    if ((address % 4 != 0) || (len % 4 != 0)) {
+//        return;
+//    }
+//    // 转换为32位指针
+//    uint32_t *data_ptr = (uint32_t *)buffer;
+//    uint32_t num_words = len / 4;
+//    // 逐字写入
+//    for (uint32_t i = 0; i < num_words; i++) {
+//        MyFlash_WriteWord(address + i * 4, data_ptr[i]);
+//    }
+//}
 /**
   * @brief  批量写入数据（按字对齐）
   * @param  address 目标起始地址（必须4字节对齐）
   * @param  buffer  数据缓冲区
   * @param  len     数据长度（必须为4的倍数）
-  * @retval None
+  * @retval HAL_StatusTypeDef 操作结果
   */
-void MyFlash_WriteBuffer(uint32_t address, uint8_t *buffer, uint32_t len) {
+HAL_StatusTypeDef MyFlash_WriteBuffer(uint32_t address, uint8_t *buffer, uint32_t len) {
     // 检查地址和长度是否对齐
     if ((address % 4 != 0) || (len % 4 != 0)) {
-        return;
+        return HAL_ERROR;
     }
-    // 转换为32位指针
+    
+    // 解锁Flash
+    HAL_StatusTypeDef status = HAL_FLASH_Unlock();
+    if (status != HAL_OK) {
+        return status;
+    }
+    
+    // 禁用中断
+    __disable_irq();
+    
+    // 获取字指针和数量
     uint32_t *data_ptr = (uint32_t *)buffer;
     uint32_t num_words = len / 4;
-
-    // 逐字写入
+    
     for (uint32_t i = 0; i < num_words; i++) {
-        MyFlash_WriteWord(address + i * 4, data_ptr[i]);
+        // 等待前一次操作完成
+        while (__HAL_FLASH_GET_FLAG(FLASH_FLAG_BSY));
+        
+        // 执行字编程
+        status = HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, address + i * 4, data_ptr[i]);
+        
+        if (status != HAL_OK) {
+            // 记录错误地址
+            U1_Printf("Flash写入失败 @0x%08X, 错误:%d", address + i * 4, HAL_FLASH_GetError());
+            break;
+        }
     }
+    
+    // 确保最后一次操作完成
+    while (__HAL_FLASH_GET_FLAG(FLASH_FLAG_BSY));
+    
+    // 重新启用中断
+    __enable_irq();
+    
+    // 锁定Flash
+    HAL_FLASH_Lock();
+    
+    return status;
 }
+
 
 
 

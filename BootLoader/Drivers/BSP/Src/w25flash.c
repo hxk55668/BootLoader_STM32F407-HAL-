@@ -412,7 +412,25 @@ void Flash_EraseSector(uint32_t globalAddr) {
 	__Deselect_Flash();		//CS=1
 	Flash_Wait_Busy(); 	   //大约30ms
 }
+/**
+  * @brief  通过块号擦除指定64KB块
+  * @param  block_num: 块编号 (0~255)
+  * @note   调用前确保目标块内无重要数据！
+  */
+void Flash_EraseBlockByNumber(uint8_t block_num)
+{
+    // 参数有效性检查（可选）
+    if (block_num > 255) 
+    {
+        block_num = 255; // 防止越界
+    }
 
+    // 通过块号计算起始地址
+    uint32_t block_addr = Flash_Addr_byBlock(block_num);
+    
+    // 调用现有的块擦除函数
+    Flash_EraseBlock64K(block_addr);
+}
 //检查寄存器SR1的BUSY位，直到BUSY位为0
 uint32_t Flash_Wait_Busy(void) {
 	uint8_t SR1 = 0;

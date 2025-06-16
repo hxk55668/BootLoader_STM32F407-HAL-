@@ -32,6 +32,9 @@
 "bootloader\my_flash.o"
 "bootloader\task_main.o"
 "bootloader\bootloader.o"
+"bootloader\driver_esp.o"
+"bootloader\esp01_uart.o"
+"bootloader\uart3_printf.o"
 --strict --scatter "BootLoader\BootLoader.sct"
 --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers

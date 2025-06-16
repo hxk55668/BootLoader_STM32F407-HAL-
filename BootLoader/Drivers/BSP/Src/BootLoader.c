@@ -74,11 +74,6 @@ void BootLoader_Info(void)
 void BootLoader_CMDFunciton(uint8_t *Data, uint16_t DataLength)
 {
 		int temp;
-	    // 去除换行符（如 '\r' 或 '\n'）
-    while (DataLength > 0 && (Data[DataLength - 1] == '\r' || Data[DataLength - 1] == '\n')) {
-        DataLength--;
-    }
-		//BootStatusFlag = 0表示没有状态发生
 		if (BootStatusFlag == 0){
 			if (DataLength == 1 && Data[0] == '1')
 			{
@@ -123,7 +118,6 @@ void BootLoader_CMDFunciton(uint8_t *Data, uint16_t DataLength)
 			}
 	 }
 		else if (BootStatusFlag & UPDATA_IAP_XMODEData){									// 判断是否处于处理数据的状态
-			U1_Printf("[XMODEM] Recv Len:%d\r\n", DataLength);  			// 打印所有接收长度 调试
 			//一次接收133个字节 Data为128个字节 包头为0x01 GITHUB测试1
 			if (DataLength == 133 && Data[0] == 0x01){								//数据长度为133 起始位为0x01
 				BootStatusFlag &= ~UPDATA_IAP_XMODEC;										//停止发送大写C				
@@ -135,17 +129,16 @@ void BootLoader_CMDFunciton(uint8_t *Data, uint16_t DataLength)
 							if (BootStatusFlag & CMD5_IAP_XModeData){
 									//写入外部FLASH 指定块 一次可以写入1024个字节
 									// 计算写入地址：块起始地址 + 已写入次数 × 1024
-									uint32_t write_addr = UpDataA.XmodeNum * 0x010000;     // 块起始地址
-									write_addr += (UpDataA.XmodeNum - 1/ 8) * 1024;           // 偏移量
-									Flash_WriteSector(write_addr, &UpDataA.UpDataBuffer[0], UPDATA_SINGLE_SIZE);
+									uint32_t write_addr = UpDataA.W25Q128_BlockNum * 0x010000;     // 块起始地址
+									write_addr += ((UpDataA.XmodeNum - 1)/ 8) * 1024;           // 偏移量
+									Flash_WriteSector(write_addr, UpDataA.UpDataBuffer, UPDATA_SINGLE_SIZE);
 							}else{
 									MyFlash_WriteBuffer(FLASH_ACode_STARTADDR + ((UpDataA.XmodeNum / 8) - 1) * UPDATA_SINGLE_SIZE, UpDataA.UpDataBuffer, UPDATA_SINGLE_SIZE);
 							}
 					}
 					U1_Printf("\x06");//应答位
-					
 				}else{
-					U1_Printf("\x15");//非应答
+					U1_Printf("\x15");  // 不应答
 				}
 			}
 			if (DataLength == 1 && Data[0] == 0x04){			//EOT位 发送数据结束位
@@ -158,15 +151,24 @@ void BootLoader_CMDFunciton(uint8_t *Data, uint16_t DataLength)
 						// 计算在当前块内的写入偏移
 						uint32_t flash_offset = block_count * UPDATA_SINGLE_SIZE;
 						// 计算绝对写入地址
-						uint32_t write_address = UpDataA.XmodeNum * 0x010000 + flash_offset;
+						uint32_t write_address = UpDataA.W25Q128_BlockNum * 0x010000 + flash_offset;
 						// 写入剩余数据
-						MyFlash_WriteBuffer(write_address, UpDataA.UpDataBuffer, (UpDataA.XmodeNum % 8) * 128);
+						Flash_WriteSector(write_address, UpDataA.UpDataBuffer, (UpDataA.XmodeNum % 8) * 128);
+					}else{
+							MyFlash_WriteBuffer(FLASH_ACode_STARTADDR + ((UpDataA.XmodeNum / 8)) * UPDATA_SINGLE_SIZE, UpDataA.UpDataBuffer, (UpDataA.XmodeNum % 8) * 128);
 					}
-					MyFlash_WriteBuffer(FLASH_ACode_STARTADDR + ((UpDataA.XmodeNum / 8)) * UPDATA_SINGLE_SIZE, UpDataA.UpDataBuffer, (UpDataA.XmodeNum % 8) * 128);
 				}
 				BootStatusFlag &= ~UPDATA_IAP_XMODEData;		//结束处理数据状态
-				HAL_Delay(50);
-				HAL_NVIC_SystemReset();
+				if (BootStatusFlag & CMD5_IAP_XModeData){
+					BootStatusFlag &= ~ CMD5_IAP_XModeData;
+					OTA_INFO.Firelen[UpDataA.W25Q128_BlockNum] = UpDataA.XmodeNum * 128; //记录本次下载程序的大小
+				  EP24C_WriteOTAInfo();
+					HAL_Delay(50);
+					BootLoader_Info();
+				}else{
+					HAL_Delay(50);
+					HAL_NVIC_SystemReset();
+				}
 			}
 		}
 		else if (BootStatusFlag & OTA_VERSION_FLAG){
@@ -186,15 +188,15 @@ void BootLoader_CMDFunciton(uint8_t *Data, uint16_t DataLength)
 		}
 		else if (BootStatusFlag & CODE_INSTALL_TO_MyFlash)
 		{
-			if (DataLength == 1){
+			if (DataLength == 1){																											//判断输入的字符 1-9
 				if (Data[0] >= 0x31 && Data[0] <= 0x39){
-					UpDataA.XmodeNum = Data[0] - 0x30;
-					BootStatusFlag |= (UPDATA_IAP_XMODEC | UPDATA_IAP_XMODEData | CMD5_IAP_XModeData);
+					UpDataA.W25Q128_BlockNum = Data[0] - 0x30;
+					BootStatusFlag |= (UPDATA_IAP_XMODEC | UPDATA_IAP_XMODEData | CMD5_IAP_XModeData);	//发送大写字母C 串口IAP下载程序 写入外部Flash Flag
 					UpDataA.XmodeTimer = 0;
 					UpDataA.XmodeNum   = 0;
-					OTA_INFO.Firelen[UpDataA.XmodeNum] = 0;
-					Flash_EraseBlockByNumber(UpDataA.XmodeNum);
-					U1_Printf("通过Xmodem协议 串口IAP向外部FLASH下载程序（第%d块） 请使用bin格式文件", UpDataA.XmodeNum);
+					OTA_INFO.Firelen[UpDataA.W25Q128_BlockNum] = 0;
+					Flash_EraseBlockByNumber(UpDataA.W25Q128_BlockNum);																	//擦除指定块 1-9
+					U1_Printf("通过Xmodem协议 串口IAP向外部FLASH下载程序（第%d块） 请使用bin格式文件", UpDataA.W25Q128_BlockNum);
 					BootStatusFlag &= ~ CODE_INSTALL_TO_MyFlash;
 				}else U1_Printf("输入命令非法\r\n");
 			}else U1_Printf("数据长度错误\r\n");
@@ -203,7 +205,7 @@ void BootLoader_CMDFunciton(uint8_t *Data, uint16_t DataLength)
 		{
 			if (DataLength == 1){
 				if (Data[0] >= 0x31 && Data[0] <= 0x39){
-					UpDataA.XmodeNum = Data[0] - 0x30;
+					UpDataA.W25Q128_BlockNum = Data[0] - 0x30;
 					BootStatusFlag |= UPDATA_UPDTA_A;	
 					BootStatusFlag &= ~ CMD6_INSTALL_TO_ASector;
 				}else U1_Printf("输入命令非法\r\n");
@@ -229,10 +231,11 @@ void BootLoader_Brance(void)
             // 跳转后不应继续执行后续代码
             return; // 关键修复：跳转后直接返回
         }
-    } else {
-        U1_Printf("BootLoader ENTER CMD\r\n");
-        BootLoader_Info();
     }
+//			ESP8266_RESET();
+//			HAL_Delay(1000);
+			U1_Printf("BootLoader ENTER CMD\r\n");
+			BootLoader_Info();
 }
 /**
   * 函    数：SP指针赋值函数
